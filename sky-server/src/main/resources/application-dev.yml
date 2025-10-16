@@ -11,3 +11,8 @@ sky:
     access-key-id: LTAI5tMNBWdpkKkEFpggBbXG
     access-key-secret: yF3rwx4Ei2bRjdIGbtNQs0ORfwPIQe
     bucket-name: big-event20050721
+  redis:
+    host: localhost
+    port: 6379
+    password: 123456
+    database: 0
