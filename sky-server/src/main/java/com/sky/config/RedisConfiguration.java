@@ -16,7 +16,7 @@ public class RedisConfiguration {
         RedisTemplate redisTemplate = new RedisTemplate();
         //设置redis的连接工厂对象
         redisTemplate.setConnectionFactory(redisConnectionFactory);
-        //设置reids key的序列化器
+        //设置redis key的序列化器
         redisTemplate.setKeySerializer(new StringRedisSerializer());
         return redisTemplate;
     }

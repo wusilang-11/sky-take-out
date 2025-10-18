@@ -8,20 +8,26 @@ import com.sky.dto.DishDTO;
 import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Dish;
 import com.sky.entity.DishFlavor;
+import com.sky.entity.Setmeal;
 import com.sky.exception.DeletionNotAllowedException;
+import com.sky.exception.SetmealEnableFailedException;
 import com.sky.mapper.DishFlavorMapper;
 import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetmealDishMapper;
+import com.sky.mapper.SetmealMapper;
 import com.sky.result.PageResult;
 import com.sky.service.DishService;
 import com.sky.vo.DishVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @Slf4j
@@ -32,6 +38,11 @@ public class DishServiceImpl implements DishService {
 
     @Autowired
     private DishFlavorMapper dishFlavorMapper;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
+    @Autowired
+    private SetmealDishMapper setmealDishMapper;
     /**
      * 新增菜品和对应的口味
      *
@@ -72,8 +83,7 @@ public class DishServiceImpl implements DishService {
         return new  PageResult(page.getTotal(),page.getResult());
     }
 
-    @Autowired
-    private SetmealDishMapper setmealDishMapper;
+
     /**
      * 菜品批量删除
      *
@@ -152,6 +162,78 @@ public class DishServiceImpl implements DishService {
             });
             //向口味表插入n条数据
             dishFlavorMapper.insertBatch(flavors);
+        }
+    }
+
+
+
+
+
+    /**
+     * 根据分类id查询菜品
+     * @param categoryId
+     * @return
+     */
+    public List<Dish> list(Long categoryId) {
+        Dish dish = Dish.builder()
+                .categoryId(categoryId)
+                .status(StatusConstant.ENABLE)
+                .build();
+        return dishMapper.list(dish);
+    }
+
+    /**
+     * 条件查询菜品和口味
+     * @param dish
+     * @return
+     */
+    public List<DishVO> listWithFlavor(Dish dish) {
+        List<Dish> dishList = dishMapper.list(dish);
+
+        List<DishVO> dishVOList = new ArrayList<>();
+
+        for (Dish d : dishList) {
+            DishVO dishVO = new DishVO();
+            BeanUtils.copyProperties(d,dishVO);
+
+            //根据菜品id查询对应的口味
+            List<DishFlavor> flavors = dishFlavorMapper.getByDishId(d.getId());
+
+            dishVO.setFlavors(flavors);
+            dishVOList.add(dishVO);
+        }
+
+        return dishVOList;
+    }
+
+    /**
+     * 菜品起售、停售
+     * @param status 状态：0=停售，1=起售
+     * @param id 菜品id
+     */
+    public void startOrStop(Integer status, Long id) {
+        // 先检查菜品是否存在
+        Dish dish = dishMapper.getById(id);
+        if (dish == null) {
+            throw new RuntimeException("菜品不存在，无法修改状态");
+        }
+
+        // 构建更新对象
+        Dish updateDish = Dish.builder()
+                .id(id)
+                .status(status)
+                .build();
+
+        // 执行更新
+        int rows = dishMapper.updateStatus(updateDish);
+        if (rows == 0) {
+            throw new RuntimeException("更新菜品状态失败");
+        }
+
+        // 清理所有菜品缓存数据（以 dish_* 开头的 key）
+        Set keys = redisTemplate.keys("dish_*");
+        if (keys != null && !keys.isEmpty()) {
+            redisTemplate.delete(keys);
         }
     }
 }
