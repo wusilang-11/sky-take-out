@@ -17,5 +17,12 @@ sky:
     password: 123456
     database: 0
   wechat:
-    appid: wx3061df9acf48ce24
-    secret: ae07f3426770ff1ed8300590d805a3c1
+    appid: wx3061df9acf48ce24   #小程序的appid
+    secret: ae07f3426770ff1ed8300590d805a3c1   #小程序的秘钥
+    mchid: 1561414331   #商户号这些信息要成为商户才有，这里只做了解
+    mchSerialNo: 4B3B3DC35414AD50B1B755BAF8DE9CC7CF407606   #商户API证书的证书序列号
+    privateKeyFilePath: D:\apiclient_key.pem    #商户私钥文件
+    apiV3Key: CZBK51236435wxpay435434323FFDuv3    #证书解密的密钥
+    weChatPayCertFilePath: D:\wechatpay_166D96F876F45C7D07CE98952A96EC980368ACFC.pem  #平台证书
+    notifyUrl: https://www.weixin.qq.com/wxpay/pay.php  #支付成功的回调地址
+    refundNotifyUrl: https://www.weixin.qq.com/wxpay/pay.php   #退款成功的回调地址
